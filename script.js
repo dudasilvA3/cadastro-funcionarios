@@ -1,38 +1,40 @@
 // Inicializa o banco de dados
-const request = indexedDB.open("FuncionariosDB", 1);//versão 1 do banco de dados funcionáriosDB do indexedDB
-request.onupgradeneeded = function (event) {//onupgradeneeded-->evento de atualizacao
+const request = indexedDB.open("FuncionariosDB", 1); // versão 1 do banco de dados funcionáriosDB do IndexedDB
+
+request.onupgradeneeded = function (event) { // onupgradeneeded -> evento de atualização
     let db = event.target.result;
     let store = db.createObjectStore("funcionarios", { keyPath: "id", autoIncrement: true });
-    //store.createIndex()cria um indice no objeto store
+    // store.createIndex() cria um índice no objeto store
     store.createIndex("nome", "nome", { unique: false });
     store.createIndex("cpf", "cpf", { unique: true });
     store.createIndex("email", "email", { unique: true });
-    store.createIndex("telefone", "telefone", { unique: true});
-    store.createIndex("cargo", "cargo", { unique: false});
+    store.createIndex("telefone", "telefone", { unique: true });
+    store.createIndex("cargo", "cargo", { unique: false });
 };
 
-request.onsuccess = function (event) { //caso o evento seja executado com sucesso
+request.onsuccess = function (event) { // caso o evento seja executado com sucesso
     console.log("Banco de dados carregado com sucesso!");
     listarFuncionarios(); // Garante que os dados sejam carregados ao iniciar
 };
 
-request.onerror = function (event) { //caso o evento não seja executado com sucesso
+request.onerror = function (event) { // caso o evento não seja executado com sucesso
     console.error("Erro ao abrir o IndexedDB:", event.target.error);
 };
 
 // Função auxiliar para verificar se o banco de dados foi carregado corretamente
 function verificarDB() {
-    if (!request.result) { // Verifica se o banco esta disponivel caso nao esteja retorna null
+    // Verifica se o banco foi carregado corretamente
+    if (!request.result) {
         console.error("O banco de dados não foi carregado corretamente.");
         return null;
     }
-    return request.result;
+    return request.result; // Retorna o banco de dados carregado
 }
 
 // Captura o evento de envio do formulário
 document.querySelector(".add_names").addEventListener("submit", function (event) {
     event.preventDefault();
-    let funcionario = { // Criando objeto funcionário,as palavras seguidas de dois pontos so atributos
+    let funcionario = { // Criando objeto funcionário
         nome: document.querySelector("#nome").value,
         cpf: document.querySelector("#cpf").value,
         email: document.querySelector("#email").value,
@@ -41,31 +43,30 @@ document.querySelector(".add_names").addEventListener("submit", function (event)
         cargo: document.querySelector("#cargo").value
     };
 
-
-    adicionarFuncionario(funcionario);
+    adicionarFuncionario(funcionario); // Adiciona o funcionário
 });
+
 // Função para listar funcionários com feedback visual
 function listarFuncionarios() {
-    let db = verificarDB();
+    let db = verificarDB(); // Verifica se o banco está carregado
     if (!db) {
         mostrarFeedback("Erro ao carregar banco de dados!", "error");
         return;
     }
 
-    let transaction = db.transaction("funcionarios", "readonly");//faz a leitura do banco de funcionários
+    let transaction = db.transaction("funcionarios", "readonly"); // Faz a leitura do banco de funcionários
     let store = transaction.objectStore("funcionarios");
 
-    let listaFuncionarios = document.querySelector(".your_dates");//exibir lista no HTML
+    let listaFuncionarios = document.querySelector(".your_dates"); // Exibir lista no HTML
     listaFuncionarios.innerHTML = ""; // Limpa antes de exibir
     
-    let cursorRequest = store.openCursor();//jeito de percorrer todos os registros dentro da store
-    cursorRequest.onsuccess = function (event) {//lista executada com sucesso
-        let cursor = event.target.result;//o cursor aponta para cada registro
+    let cursorRequest = store.openCursor(); // Percorre todos os registros dentro da store
+    cursorRequest.onsuccess = function (event) { // Lista executada com sucesso
+        let cursor = event.target.result; // O cursor aponta para cada registro
         if (cursor) {
-            let funcionario = cursor.value;//o cursor busca as informações dos funconários 
+            let funcionario = cursor.value; // O cursor busca as informações dos funcionários
             listaFuncionarios.innerHTML += `<p>ID: ${funcionario.id} - Nome: ${funcionario.nome} - CPF: ${funcionario.cpf}
-            E-mail:${funcionario.email} - Telefone :${funcionario.telefone} - Data de nascimento:${funcionario.data_nascimento} - 
-            Cargo:${funcionario.cargo}</p>`;
+           </p>`;
             cursor.continue();
         } else {
             mostrarFeedback("Lista de funcionários carregada com sucesso!", "success");
@@ -78,62 +79,59 @@ function listarFuncionarios() {
     };
 }
 
-
 // Função para adicionar um funcionário com feedback visual
 function adicionarFuncionario(funcionario) {
-    let db = verificarDB();//let  db hcama a função verficar dados
-    if (!db) return;//Se estiver vazio sai da função
+    let db = verificarDB(); // Verifica se o banco de dados foi carregado corretamente
+    if (!db) return; // Se não estiver carregado, sai da função
 
-    let transaction = db.transaction("funcionarios", "readwrite");//cria uma transação como objeto funcionário,o readwrite permite gerir(ler,inserir,atualizar e deletar) os dados
-    let store = transaction.objectStore("funcionarios");//referencia direta onde os dados serão armazenados
+    let transaction = db.transaction("funcionarios", "readwrite"); // Cria uma transação de leitura e escrita
+    let store = transaction.objectStore("funcionarios"); // Referência direta ao objeto onde os dados serão armazenados
     
-    let addRequest = store.add(funcionario);//adicionar funcionário na store
-    addRequest.onsuccess = function () {//funcionário foi adicionado com sucesso
+    let addRequest = store.add(funcionario); // Adiciona o funcionário na store
+    addRequest.onsuccess = function () { // Funcionário foi adicionado com sucesso
         console.log("Funcionário adicionado com sucesso!");
         mostrarFeedback("Funcionário cadastrado com sucesso!", "success"); // Mostra feedback visual
-        listarFuncionarios();
+        listarFuncionarios(); // Lista os funcionários após adicionar
     };
 
-    addRequest.onerror = function (event) {//erro ao adicionar funconário
+    addRequest.onerror = function (event) { // Erro ao adicionar funcionário
         console.error("Erro ao adicionar funcionário:", event.target.error);
         mostrarFeedback("Erro ao cadastrar funcionário!", "error"); // Exibe erro na interface
     };
 }
 
-
 // Função para atualizar um funcionário com feedback visual
-function atualizarFuncionario(id, novosDados) {//o id é pra informar o n° de registro do funcionário e novosDados para alterar a informção desejada 
-    let db = verificarDB();
-    if (!db) return;
+function atualizarFuncionario(id, novosDados) {
+    let db = verificarDB(); // Verifica se o banco de dados foi carregado corretamente
+    if (!db) return; // Se não estiver carregado, sai da função
 
     let transaction = db.transaction("funcionarios", "readwrite");
     let store = transaction.objectStore("funcionarios");
 
-    let getRequest = store.get(id);// pega o n° registro do funcionário
-    getRequest.onsuccess = function () {//obteve sucesso ao obter o id do funcionáro
+    let getRequest = store.get(id); // Pega o número do registro do funcionário
+    getRequest.onsuccess = function () { // Obteve sucesso ao obter o id do funcionário
         let funcionario = getRequest.result;
         if (funcionario) {
-            Object.assign(funcionario, novosDados); // atualiza os dados do funcionário
-            let updateRequest = store.put(funcionario);//alterar  dados dos funcionários
+            Object.assign(funcionario, novosDados); // Atualiza os dados do funcionário
+            let updateRequest = store.put(funcionario); // Atualiza os dados dos funcionários
             updateRequest.onsuccess = function () {
                 console.log("Funcionário atualizado com sucesso!");
                 mostrarFeedback("Dados atualizados com sucesso!", "success"); // Mostra feedback visual
-                listarFuncionarios();
+                listarFuncionarios(); // Atualiza a lista após atualização
             };
 
-            updateRequest.onerror = function (event) {//alteração não realizada
+            updateRequest.onerror = function (event) { // Alteração não realizada
                 console.error("Erro ao atualizar funcionário:", event.target.error);
                 mostrarFeedback("Erro ao atualizar funcionário!", "error"); // Exibe erro na interface
             };
         }
     };
 
-    getRequest.onerror = function (event) {//alteração não realizada
+    getRequest.onerror = function (event) { // Erro ao obter funcionário para atualização
         console.error("Erro ao obter funcionário para atualização:", event.target.error);
         mostrarFeedback("Erro ao carregar funcionário para atualização!", "error"); // Feedback visual
     };
 }
-
 
 // Função para deletar um funcionário com feedback visual
 function deletarFuncionario(id) {
