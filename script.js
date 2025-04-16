@@ -102,33 +102,33 @@ function adicionarFuncionario(funcionario) {
 
 
 // Função para atualizar um funcionário com feedback visual
-function atualizarFuncionario(id, novosDados) {
+function atualizarFuncionario(id, novosDados) {//o id é pra informar o n° de registro do funcionário e novosDados para alterar a informção desejada 
     let db = verificarDB();
     if (!db) return;
 
     let transaction = db.transaction("funcionarios", "readwrite");
     let store = transaction.objectStore("funcionarios");
 
-    let getRequest = store.get(id);
-    getRequest.onsuccess = function () {
+    let getRequest = store.get(id);// pega o n° registro do funcionário
+    getRequest.onsuccess = function () {//obteve sucesso ao obter o id do funcionáro
         let funcionario = getRequest.result;
         if (funcionario) {
-            Object.assign(funcionario, novosDados); // Atualiza os dados do funcionário
-            let updateRequest = store.put(funcionario);
+            Object.assign(funcionario, novosDados); // atualiza os dados do funcionário
+            let updateRequest = store.put(funcionario);//alterar  dados dos funcionários
             updateRequest.onsuccess = function () {
                 console.log("Funcionário atualizado com sucesso!");
                 mostrarFeedback("Dados atualizados com sucesso!", "success"); // Mostra feedback visual
                 listarFuncionarios();
             };
 
-            updateRequest.onerror = function (event) {
+            updateRequest.onerror = function (event) {//alteração não realizada
                 console.error("Erro ao atualizar funcionário:", event.target.error);
                 mostrarFeedback("Erro ao atualizar funcionário!", "error"); // Exibe erro na interface
             };
         }
     };
 
-    getRequest.onerror = function (event) {
+    getRequest.onerror = function (event) {//alteração não realizada
         console.error("Erro ao obter funcionário para atualização:", event.target.error);
         mostrarFeedback("Erro ao carregar funcionário para atualização!", "error"); // Feedback visual
     };
